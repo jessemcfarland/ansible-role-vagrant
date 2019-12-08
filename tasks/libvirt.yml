@@ -1,0 +1,43 @@
+---
+- name: set libvirt variables
+  include_vars: libvirt.yml
+
+- name: install libvirt packages
+  become: yes
+  become_user: root
+  yum:
+    name: "{{ libvirt_packages }}"
+    state: present
+
+- name: install libvirt plugin build dependencies
+  become: yes
+  become_user: root
+  yum:
+    name: "{{ libvirt_plugin_packages }}"
+    state: present
+
+- name: add vagrant users to libvirt group
+  become: yes
+  become_user: root
+  user:
+    name: "{{ item }}"
+    groups:
+      - "{{ libvirt_group }}"
+    append: yes
+  loop: "{{ vagrant_users }}"
+
+- name: install libvirt vagrant plugin for vagrant users
+  include_tasks: install_plugin.yml
+  vars:
+    plugin: "{{ libvirt_vagrant_plugin }}"
+  loop: "{{ vagrant_users }}"
+  loop_control:
+    loop_var: user
+
+- name: start libvirt service
+  become: yes
+  become_user: root
+  systemd:
+    name: "{{ libvirt_systemd_service }}"
+    enabled: yes
+    state: started

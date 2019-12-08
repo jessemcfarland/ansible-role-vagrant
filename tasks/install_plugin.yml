@@ -1,0 +1,13 @@
+---
+- name: list installed vagrant plugins
+  become: yes
+  become_user: "{{ user }}"
+  command: vagrant plugin list
+  register: installed_plugins
+  changed_when: no
+
+- name: build libvirt vagrant plugin
+  become: yes
+  become_user: "{{ user }}"
+  command: "vagrant plugin install {{ plugin }}"
+  when: libvirt_vagrant_plugin not in installed_plugins.stdout

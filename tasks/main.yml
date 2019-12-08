@@ -1,0 +1,13 @@
+---
+- name: install vagrant package
+  become: yes
+  become_user: root
+  yum:
+    name: "{{ vagrant_package }}"
+    state: present
+
+- name: configure vagrant providers
+  include_tasks: "{{ provider }}.yml"
+  loop: "{{ vagrant_providers }}"
+  loop_control:
+    loop_var: provider

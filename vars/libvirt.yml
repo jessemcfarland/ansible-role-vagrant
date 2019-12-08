@@ -1,0 +1,11 @@
+---
+libvirt_packages:
+  - libvirt
+  - qemu-kvm
+libvirt_plugin_packages:
+  - gcc
+  - libvirt-devel
+  - ruby-devel
+libvirt_vagrant_plugin: vagrant-libvirt
+libvirt_group: libvirt
+libvirt_systemd_service: libvirtd.service
