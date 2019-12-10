@@ -1,0 +1,14 @@
+{{ ansible_managed | comment('xml')}}
+<network ipv6='yes'>
+  <name>{{ vagrant_libvirt_network_name }}</name>
+  <uuid>{{ inventory_hostname | to_uuid }}</uuid>
+  <forward mode='nat'/>
+  <bridge name='{{ vagrant_libvirt_network_bridge }}' stp='on' delay='0'/>
+  <mac address='{{ '52:54:00' | random_mac(seed=inventory_hostname) }}'/>
+  <domain name='{{ vagrant_libvirt_network_domain }}' localOnly='yes'/>
+  <ip address='192.168.121.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.121.1' end='192.168.121.254'/>
+    </dhcp>
+  </ip>
+</network>

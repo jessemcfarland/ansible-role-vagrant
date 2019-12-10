@@ -1,0 +1,53 @@
+---
+- name: restart NetworkManager service
+  become: yes
+  become_user: root
+  systemd:
+    name: "{{ nm_systemd_service }}"
+    state: restarted
+
+- name: destroy libvirt vagrant network
+  become: yes
+  become_user: root
+  command: "virsh net-destroy {{ vagrant_libvirt_network_name }}"
+  register: destroy_vagrant_network_result
+  changed_when: "'Network ' ~ vagrant_libvirt_network_name ~ ' destroyed' in destroy_vagrant_network_result.stdout"
+  failed_when: >-
+    destroy_vagrant_network_result.rc != 0 and
+    "network '" ~ vagrant_libvirt_network_name ~ "' is not active" not in destroy_vagrant_network_result.stderr and
+    "no network with matching name '" ~ vagrant_libvirt_network_name ~ "'" not in destroy_vagrant_network_result.stderr
+
+- name: undefine libvirt vagrant network
+  become: yes
+  become_user: root
+  command: "virsh net-undefine {{ vagrant_libvirt_network_name }}"
+  args:
+    removes: "{{ libvirt_network_config_directory }}/{{ vagrant_libvirt_network_name }}.xml"
+  register: undefine_vagrant_network_result
+  changed_when: "'Network ' ~ vagrant_libvirt_network_name ~ ' has been undefined' in undefine_vagrant_network_result.stdout"
+  failed_when: >-
+    undefine_vagrant_network_result.rc != 0 and
+    "no network with matching name '" ~ vagrant_libvirt_network_name ~ "'" not in undefine_vagrant_network_result.stderr
+  notify: restart libvirt service
+
+- name: restart libvirt service
+  become: yes
+  become_user: root
+  systemd:
+    name: "{{ libvirt_systemd_service }}"
+    state: restarted
+
+- name: define libvirt vagrant network
+  become: yes
+  become_user: root
+  command: "virsh net-define {{ libvirt_vagrant_network_config_file }}.definition"
+  args:
+    creates: "{{ libvirt_vagrant_network_config_file }}"
+
+- name: start libvirt vagrant network
+  become: yes
+  become_user: root
+  command: "virsh net-start {{ vagrant_libvirt_network_name }}"
+  register: start_vagrant_network_result
+  changed_when: "'Network ' ~ vagrant_libvirt_network_name ~ ' started' in start_vagrant_network_result.stdout"
+  failed_when: "start_vagrant_network_result.rc != 0 and 'network is already active' not in start_vagrant_network_result.stderr"

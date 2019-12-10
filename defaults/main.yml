@@ -3,3 +3,8 @@ vagrant_version: 2.2.6
 vagrant_providers:
   - libvirt
 vagrant_users: []
+
+vagrant_libvirt_autodns: no
+vagrant_libvirt_network_bridge: virbr1
+vagrant_libvirt_network_domain: vagrant.local
+vagrant_libvirt_network_name: vagrant-libvirt

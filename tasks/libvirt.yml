@@ -41,3 +41,67 @@
     name: "{{ libvirt_systemd_service }}"
     enabled: yes
     state: started
+
+- name: destroy libvirt default network
+  become: yes
+  become_user: root
+  command: "virsh net-destroy {{ libvirt_default_network_name }}"
+  register: destroy_default_network_result
+  changed_when: "'Network ' ~ libvirt_default_network_name ~ ' destroyed' in destroy_default_network_result.stdout"
+  failed_when: >-
+    destroy_default_network_result.rc != 0 and
+    "network '" ~ libvirt_default_network_name ~ "' is not active" not in destroy_default_network_result.stderr and
+    "no network with matching name '" ~ libvirt_default_network_name ~ "'" not in destroy_default_network_result.stderr
+
+- name: undefine libvirt default network
+  become: yes
+  become_user: root
+  command: "virsh net-undefine {{ libvirt_default_network_name }}"
+  args:
+    removes: "{{ libvirt_network_config_directory }}/{{ libvirt_default_network_name }}.xml"
+  register: undefine_default_network_result
+  changed_when: "'Network ' ~ libvirt_default_network_name ~ ' has been undefined' in undefine_default_network_result.stdout"
+  failed_when: >-
+    undefine_default_network_result.rc != 0 and
+    "no network with matching name '" ~ libvirt_default_network_name ~ "'" not in undefine_default_network_result.stderr
+  notify: restart libvirt service
+
+- name: configure automatic DNS resolution for libvirt vagrant network
+  block:
+    # REVIEW: Is there a better solution to configuring the libvirt vagrant
+    # network?
+    - name: create libvirt vagrant network definition file
+      become: yes
+      become_user: root
+      template:
+        src: libvirt-vagrant-network.xml.j2
+        dest: "{{ libvirt_vagrant_network_config_file }}.definition"
+        owner: root
+        group: root
+        mode: 0600
+      notify:
+        - destroy libvirt vagrant network
+        - undefine libvirt vagrant network
+        - define libvirt vagrant network
+        - start libvirt vagrant network
+    - name: configure NetworkManager to use dnsmasq for dns
+      become: yes
+      become_user: root
+      template:
+        src: nm-dns.conf.j2
+        dest: "{{ nm_config_directory }}/conf.d/dns.conf"
+        owner: root
+        group: root
+        mode: 0644
+      notify: restart NetworkManager service
+    - name: "configure dnsmasq to use local lookup for {{ vagrant_libvirt_network_domain }}"
+      become: yes
+      become_user: root
+      template:
+        src: libvirt-vagrant-dnsmasq.conf.j2
+        dest: "{{ nm_config_directory }}/dnsmasq.d/{{ vagrant_libvirt_network_name }}.conf"
+        owner: root
+        group: root
+        mode: 0644
+      notify: restart NetworkManager service
+  when: vagrant_libvirt_autodns | bool

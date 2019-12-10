@@ -1,6 +1,7 @@
 ---
 libvirt_packages:
   - libvirt
+  - libvirt-client
   - qemu-kvm
 libvirt_plugin_packages:
   - gcc
@@ -9,3 +10,10 @@ libvirt_plugin_packages:
 libvirt_vagrant_plugin: vagrant-libvirt
 libvirt_group: libvirt
 libvirt_systemd_service: libvirtd.service
+libvirt_default_network_name: default
+_libvirt_config_directory: /etc/libvirt
+libvirt_network_config_directory: "{{ _libvirt_config_directory }}/qemu/networks"
+libvirt_vagrant_network_config_file: "{{ libvirt_network_config_directory }}/{{ vagrant_libvirt_network_name }}.xml"
+
+nm_config_directory: /etc/NetworkManager
+nm_systemd_service: NetworkManager.service
