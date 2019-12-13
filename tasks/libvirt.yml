@@ -68,8 +68,10 @@
 
 - name: configure automatic DNS resolution for libvirt vagrant network
   block:
-    # REVIEW: Is there a better solution to configuring the libvirt vagrant
-    # network?
+    # REVIEW: There may be a more elegant solution for creating/updating the
+    # vagrant libvirt network. However, this task it's handlers ensure that the
+    # network is redefined successfully if it exists prior to being managed by
+    # ansible.
     - name: create libvirt vagrant network definition file
       become: yes
       become_user: root
