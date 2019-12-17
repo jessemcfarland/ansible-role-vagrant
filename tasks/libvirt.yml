@@ -16,15 +16,19 @@
     name: "{{ libvirt_plugin_packages }}"
     state: present
 
+- name: get libvirt group details
+  become: yes
+  become_user: root
+  command: "getent group {{ libvirt_group }}"
+  register: getent_group_libvirt
+  changed_when: no
+
 - name: add vagrant users to libvirt group
   become: yes
   become_user: root
-  user:
-    name: "{{ item }}"
-    groups:
-      - "{{ libvirt_group }}"
-    append: yes
+  command: "usermod --append --group {{ libvirt_group }} {{ item }}"
   loop: "{{ vagrant_users }}"
+  when: item not in getent_group_libvirt.stdout
 
 - name: install libvirt vagrant plugin for vagrant users
   include_tasks: install_plugin.yml
